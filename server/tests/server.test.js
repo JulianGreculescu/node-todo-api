@@ -1,12 +1,13 @@
 const expect = require('expect');
 const request = require('supertest');
+const {ObjectID} = require('mongodb');
 
 const {app} = require('./../server');
 const {Todo} = require('./../models/todo');
 
 var todos = [
-  {text: 'First test todo'},
-  {text: 'Second test todo'}
+  {_id: new ObjectID(), text: 'First test todo'},
+  {_id: new ObjectID(), text: 'Second test todo'}
 ];
 
 beforeEach((done) => {
@@ -71,4 +72,37 @@ describe('GET /todos', () => {
       })
       .end(done);
   })
+});
+
+describe('GET /todos/:id', () => {
+  it('should be able to fetch todo by id', (done) => {
+    request(app)
+      .get(`/todos/${todos[0]._id.toHexString()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo._id).toBe(todos[0]._id.toHexString());
+        expect(res.body.todo.text).toBe('First test todo');
+      })
+      .end(done);
+  });
+
+  it('should fetch nothing for unexisting id', (done) => {
+    request(app)
+      .get('/todos/58c75e054b294d380591a269')
+      .expect(404)
+      .expect((res) => {
+        expect(res.body.todo).toBe(undefined);
+      })
+      .end(done);
+  });
+
+  it('should fetch nothing for invalid id', (done) => {
+    request(app)
+      .get('/todos/58c75e054b294d380591a26099')
+      .expect(404)
+      .expect((res) => {
+        expect(res.body.todo).toBe(undefined);
+      })
+      .end(done);
+  });
 });
