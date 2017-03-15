@@ -5,12 +5,13 @@ const {ObjectID} = require('mongodb');
 const {app} = require('./../server');
 const {Todo} = require('./../models/todo');
 
-var todos = [
-  {_id: new ObjectID(), text: 'First test todo'},
-  {_id: new ObjectID(), text: 'Second test todo'}
-];
+var todos;
 
 beforeEach((done) => {
+  todos = [
+    {_id: new ObjectID(), text: 'First test todo'},
+    {_id: new ObjectID(), text: 'Second test todo'}
+    ];
   Todo.remove({})
     .then(Todo.insertMany(todos)
     .then(() => done()));
