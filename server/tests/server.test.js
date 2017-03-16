@@ -107,3 +107,69 @@ describe('GET /todos/:id', () => {
       .end(done);
   });
 });
+
+describe('DELETE /todos/:id', () => {
+  it('should be able to delete todo by id', (done) => {
+    var hexId = todos[0]._id.toHexString();
+    request(app)
+      .delete(`/todos/${hexId}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo._id).toBe(hexId);
+        expect(res.body.todo.text).toBe('First test todo');
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        Todo.findById(hexId).then((todo) => {
+          expect(todo).toNotExist();
+          done();
+        }).catch((e) => done(e));
+      });
+  });
+
+  it('should delete nothing for unexisting id', (done) => {
+    request(app)
+      .delete('/todos/58c75e054b294d380591a269')
+      .expect(404)
+      .expect((res) => {
+        expect(res.body.todo).toBe(undefined);
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        Todo.find().then((todos) => {
+          expect(todos.length).toBe(2);
+          done();
+        }).catch((e) => {
+          done(e);
+        });
+      });
+  });
+
+  it('should delete nothing for invalid id', (done) => {
+    request(app)
+      .delete('/todos/58c75e054b294d380591a26099')
+      .expect(404)
+      .expect((res) => {
+        expect(res.body.todo).toBe(undefined);
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        Todo.find().then((todos) => {
+          expect(todos.length).toBe(2);
+          done();
+        }).catch((e) => {
+          done(e);
+        });
+      });
+  });
+});
+
