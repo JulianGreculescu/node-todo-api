@@ -292,7 +292,7 @@ beforeEach(populateTodos);
 //       });
 //   });
 // });
-
+//
 // describe('GET /users/me', () => {
 //   it('should return user if authenticated', (done) => {
 //     request(app)
@@ -318,58 +318,121 @@ beforeEach(populateTodos);
 //       .end(done);
 //   });
 // });
+//
+// describe('POST /users', () => {
+//   it('should create a user', (done) => {
+//     var email = 'Julian.Greculescu@example.com';
+//     var password = 'TopSecret!123';
+//     request(app)
+//       .post('/users')
+//       .send({email, password})
+//       .expect(200)
+//       .expect((res) => {
+//         expect(res.headers['x-auth']).toExist();
+//         expect(res.body.email).toBe(email);
+//         expect(res.body._id).toExist();
+//       })
+//       .end((err) => {
+//         if (err) {
+//           return done(err);
+//         }
+//
+//         User.findOne({email}).then((user) => {
+//           expect(user).toExist();
+//           expect(user.password).toExist();
+//           expect(user.password).toNotBe(password);
+//           expect(user.email).toBe(email);
+//           done();
+//         }).catch((e) => {
+//           done(e);
+//         });
+//       });
+//   });
+//
+//   it('should return validation errors if invalid e-mail', (done) => {
+//     request(app)
+//       .post('/users')
+//       .send({email: 'Julian.GreculescuAtExample.com', password: 'TopSecret!123'})
+//       .expect(400)
+//       .end(done);
+//   });
+//
+//   it('should return validation errors if invalid password', (done) => {
+//     request(app)
+//       .post('/users')
+//       .send({email: 'Julian.Greculescu@example.com', password: 'Short'})
+//       .expect(400)
+//       .end(done);
+//   });
+//
+//   it('should  not create user if e-mail in use', (done) => {
+//     request(app)
+//       .post('/users')
+//       .send({email: users[0].email, password: 'TopSecret!123'})
+//       .expect(400)
+//       .end(done);
+//   });
+// });
 
-describe('POST /users', () => {
-  it('should create a user', (done) => {
-    var email = 'Julian.Greculescu@example.com';
-    var password = 'TopSecret!123';
+describe('POST /users/login', () => {
+  it('should login user and return the auth token', (done) => {
+    var token;
     request(app)
-      .post('/users')
-      .send({email, password})
+      .post('/users/login')
+      .send({email: users[1].email, password: users[1].password})
       .expect(200)
       .expect((res) => {
-        expect(res.headers['x-auth']).toExist();
-        expect(res.body.email).toBe(email);
-        expect(res.body._id).toExist();
+        expect(res.body._id).toBe(users[1]._id.toHexString());
+        expect(res.body.email).toBe(users[1].email);
+        token = res.headers['x-auth'];
+        expect(token).toExist();
+      })
+      .end((err) => {
+      if (err) {
+        return done(err);
+      }
+      User.findOne({email: users[1].email}).then((user) => {
+        expect(user.tokens[0].token).toBe(token);
+        done();
+      }).catch((e) => done(e));
+    });
+  });
+
+  it('should reject invalid login - not subscribed e-mail', (done) => {
+    request(app)
+      .post('/users/login')
+      .send({email: users[0].email + 1, password: users[0].password})
+      .expect(400)
+      .expect((res) => {
+        expect(res.header['x-auth']).toNotExist();
       })
       .end((err) => {
         if (err) {
           return done(err);
         }
-
-        User.findOne({email}).then((user) => {
-          expect(user).toExist();
-          expect(user.password).toExist();
-          expect(user.password).toNotBe(password);
-          expect(user.email).toBe(email);
+        User.findOne({email: users[1].email}).then((user) => {
+          expect(user.tokens.length).toBe(0);
           done();
-        }).catch((e) => {
-          done(e);
-        });
+        }).catch((e) => done(e));
       });
   });
 
-  it('should return validation errors if invalid e-mail', (done) => {
+  it('should reject invalid login - invalid password', (done) => {
     request(app)
-      .post('/users')
-      .send({email: 'Julian.GreculescuAtExample.com', password: 'TopSecret!123'})
+      .post('/users/login')
+      .send({email: users[0].email, password: users[0].password+ 1})
       .expect(400)
-      .end(done);
-  });
-
-  it('should return validation errors if invalid password', (done) => {
-    request(app)
-      .post('/users')
-      .send({email: 'Julian.Greculescu@example.com', password: 'Short'})
-      .expect(400)
-      .end(done);
-  });
-
-  it('should  not create user if e-mail in use', (done) => {
-    request(app)
-      .post('/users')
-      .send({email: users[0].email, password: 'TopSecret!123'})
-      .expect(400)
-      .end(done);
+      .expect((res) => {
+        expect(res.header['x-auth']).toNotExist();
+      })
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        User.findOne({email: users[1].email}).then((user) => {
+          expect(user.tokens.length).toBe(0);
+          done();
+        }).catch((e) => done(e));
+      });
   });
 });

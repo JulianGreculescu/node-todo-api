@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs');
 
 var password = 'TopSecret123!';
 // bcrypt.genSalt(10, (err, salt) => {
-//   bcrypt.hash(password, salt, (err, hassh) => {
-//     console.log(hassh);
+//   bcrypt.hash(password, salt, (err, hash) => {
+//     console.log(hash);
 //   });
 // });
 
