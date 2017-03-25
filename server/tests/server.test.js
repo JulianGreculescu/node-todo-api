@@ -374,65 +374,91 @@ beforeEach(populateTodos);
 //   });
 // });
 
-describe('POST /users/login', () => {
-  it('should login user and return the auth token', (done) => {
-    var token;
+// describe('POST /users/login', () => {
+//   it('should login user and return the auth token', (done) => {
+//     var token;
+//     request(app)
+//       .post('/users/login')
+//       .send({email: users[1].email, password: users[1].password})
+//       .expect(200)
+//       .expect((res) => {
+//         expect(res.body._id).toBe(users[1]._id.toHexString());
+//         expect(res.body.email).toBe(users[1].email);
+//         token = res.headers['x-auth'];
+//         expect(token).toExist();
+//       })
+//       .end((err) => {
+//       if (err) {
+//         return done(err);
+//       }
+//       User.findOne({email: users[1].email}).then((user) => {
+//         expect(user.tokens[0].token).toBe(token);
+//         done();
+//       }).catch((e) => done(e));
+//     });
+//   });
+//
+//   it('should reject invalid login - not subscribed e-mail', (done) => {
+//     request(app)
+//       .post('/users/login')
+//       .send({email: users[0].email + 1, password: users[0].password})
+//       .expect(400)
+//       .expect((res) => {
+//         expect(res.header['x-auth']).toNotExist();
+//       })
+//       .end((err) => {
+//         if (err) {
+//           return done(err);
+//         }
+//         User.findOne({email: users[1].email}).then((user) => {
+//           expect(user.tokens.length).toBe(0);
+//           done();
+//         }).catch((e) => done(e));
+//       });
+//   });
+//
+//   it('should reject invalid login - invalid password', (done) => {
+//     request(app)
+//       .post('/users/login')
+//       .send({email: users[0].email, password: users[0].password+ 1})
+//       .expect(400)
+//       .expect((res) => {
+//         expect(res.header['x-auth']).toNotExist();
+//       })
+//       .end((err) => {
+//         if (err) {
+//           return done(err);
+//         }
+//         User.findOne({email: users[1].email}).then((user) => {
+//           expect(user.tokens.length).toBe(0);
+//           done();
+//         }).catch((e) => done(e));
+//       });
+//   });
+// });
+
+describe('DELETE /users/me/token', () => {
+  it('should delete user token', (done) => {
     request(app)
-      .post('/users/login')
-      .send({email: users[1].email, password: users[1].password})
+      .delete('/users/me/token')
+      .set('x-auth', users[0].tokens[0].token)
       .expect(200)
-      .expect((res) => {
-        expect(res.body._id).toBe(users[1]._id.toHexString());
-        expect(res.body.email).toBe(users[1].email);
-        token = res.headers['x-auth'];
-        expect(token).toExist();
-      })
-      .end((err) => {
-      if (err) {
-        return done(err);
-      }
-      User.findOne({email: users[1].email}).then((user) => {
-        expect(user.tokens[0].token).toBe(token);
-        done();
-      }).catch((e) => done(e));
-    });
-  });
-
-  it('should reject invalid login - not subscribed e-mail', (done) => {
-    request(app)
-      .post('/users/login')
-      .send({email: users[0].email + 1, password: users[0].password})
-      .expect(400)
-      .expect((res) => {
-        expect(res.header['x-auth']).toNotExist();
-      })
       .end((err) => {
         if (err) {
           return done(err);
         }
-        User.findOne({email: users[1].email}).then((user) => {
+        User.findById(users[0]._id).then((user) => {
           expect(user.tokens.length).toBe(0);
           done();
         }).catch((e) => done(e));
       });
   });
 
-  it('should reject invalid login - invalid password', (done) => {
+  it('should not delete user token if wrong x-auth', (done) => {
     request(app)
-      .post('/users/login')
-      .send({email: users[0].email, password: users[0].password+ 1})
-      .expect(400)
-      .expect((res) => {
-        expect(res.header['x-auth']).toNotExist();
-      })
-      .end((err) => {
-        if (err) {
-          return done(err);
-        }
-        User.findOne({email: users[1].email}).then((user) => {
-          expect(user.tokens.length).toBe(0);
-          done();
-        }).catch((e) => done(e));
-      });
+      .delete('/users/me/token')
+      .set('x-auth', users[0].tokens[0].token + 1)
+      .expect(401)
+      .end(done);
   });
 });
